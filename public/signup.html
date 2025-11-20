@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>AR Phone Book — Login (Split)</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-dark:#071428;
+    --panel:#061226;
+    --glass: rgba(255,255,255,0.03);
+    --muted:#9fb0c6;
+    --accent1:#ff2fa6;
+    --accent2:#5fe3bf;
+    --card-radius:16px;
+    --input-radius:12px;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;font-family:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,Arial;color:#eaf6f4;background:linear-gradient(180deg,#041224,#08182b)}
+  body{overflow:auto}
+
+/* background effects */
+  .bg-effect{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;
+    background:
+      radial-gradient(circle at 10% 20%, rgba(95,227,191,0.06), transparent 10%),
+      radial-gradient(circle at 80% 80%, rgba(255,47,166,0.06), transparent 10%);
+    mix-blend-mode: screen; animation: bgTint 24s linear infinite;}
+  @keyframes bgTint{0%{background-position:0% 0%,100% 100%}50%{background-position:100% 50%,0% 100%}100%{background-position:0% 0%,100% 100%}}
+  .bg-orbs{position:fixed;inset:0;z-index:0;pointer-events:none}
+  .bg-orb{position:absolute;width:var(--s,80px);height:var(--s,80px);border-radius:50%;background:radial-gradient(circle at 30% 30%, rgba(255,255,255,0.06), rgba(255,255,255,0.01));filter:blur(10px);opacity:0.06;animation:orbFloat linear infinite}
+  @keyframes orbFloat{0%{transform:translateY(20vh) scale(.9)}50%{transform:translateY(0vh) scale(1.05);opacity:.11}100%{transform:translateY(-20vh) scale(1.1);opacity:0.02}}
+
+/* layout */
+  .stage{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:28px;gap:28px;position:relative;z-index:2}
+  .split{width:100%;max-width:1200px;display:flex;border-radius:var(--card-radius);overflow:hidden;box-shadow:0 30px 80px rgba(2,8,18,0.8)}
+  .left{width:380px;min-width:320px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-right:1px solid var(--glass);padding:36px 28px;display:flex;flex-direction:column;gap:18px;backdrop-filter:blur(8px) saturate(120%)}
+  .brand{display:flex;align-items:center;gap:14px}
+  .brand .logo{width:56px;height:56px;border-radius:12px;overflow:hidden;background:#fff}
+  .brand h2{margin:0;font-size:20px}
+  .desc{color:var(--muted);font-size:13px;margin-top:6px}
+
+/* form */
+  .form{margin-top:8px;display:flex;flex-direction:column;gap:12px}
+  .control{display:flex;align-items:center;padding:12px;border-radius:var(--input-radius);background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.02);position:relative;transition:box-shadow .14s,border-color .14s,transform .12s}
+  .control:focus-within{border-color:var(--accent2);box-shadow:0 10px 30px rgba(95,227,191,0.06);transform:translateY(-1px)}
+  .control svg{width:18px;height:18px;margin-right:10px;opacity:0.9}
+  input{border:0;background:transparent;color:inherit;outline:0;font-size:15px;width:100%}
+  input::placeholder{color:rgba(255,255,255,0.26)}
+
+/* eye */
+  .eye-btn{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:transparent;border:0;cursor:pointer;padding:6px;border-radius:8px;color:rgba(255,255,255,0.8)}
+  .eye-btn svg{width:18px;height:18px}
+
+/* actions */
+  .actions{display:flex;gap:12px;align-items:center;margin-top:8px}
+  .btn{display:inline-flex;align-items:center;gap:10px;padding:10px 16px;border-radius:12px;border:0;font-weight:800;cursor:pointer;background:linear-gradient(180deg,var(--accent1),#ff7bcf);color:#081018;box-shadow:0 12px 36px rgba(255,47,166,0.12);transition:transform .12s ease,box-shadow .12s}
+  .btn:hover{transform:translateY(-3px);box-shadow:0 22px 56px rgba(255,47,166,0.18)}
+  .btn.secondary{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted);font-weight:700}
+  .create-account{background:linear-gradient(180deg,var(--accent2),#3bb6e8);color:#062a28;padding:9px 12px;border-radius:10px;border:0;font-weight:700;cursor:pointer}
+  .small{color:var(--muted);font-size:13px}
+
+/* right */
+  .right{flex:1;min-height:420px;position:relative;overflow:hidden;background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.00));display:flex;align-items:center;justify-content:center;padding:48px}
+  .right::before{content:"";position:absolute;inset:0;background:url('images/bg-login.jpg') center/cover no-repeat;filter:contrast(110%) saturate(110%);transform:scale(1.02);opacity:0.98;z-index:0}
+  .blob{z-index:1;position:relative;width:70%;max-width:900px;height:80%;border-radius:32px;display:flex;align-items:center;justify-content:center;background:linear-gradient(140deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));box-shadow:inset 0 -20px 60px rgba(0,0,0,0.25);padding:40px;backdrop-filter:blur(6px)}
+  .blob::after{content:"";position:absolute;inset:6px;border-radius:22px;background:linear-gradient(120deg, rgba(255,47,166,0.12), rgba(95,227,191,0.08));filter:blur(28px);mix-blend-mode:screen;pointer-events:none}
+  .welcome h1{margin:0;font-size:56px}
+  .welcome p{color:rgba(255,255,255,0.85);opacity:0.9;margin-top:8px;font-size:16px;max-width:540px}
+
+/* responsive */
+  @media (max-width:920px){ .stage{padding:18px} .split{flex-direction:column;max-width:760px} .left{width:100%;min-width:0;border-right:0} .right{display:block;min-height:260px;padding:20px} .blob{height:220px;width:100%;border-radius:14px;padding:18px} .welcome h1{font-size:32px} }
+  @media (max-width:480px){ .right{display:none} }
+
+/* toast */
+  #toast{position:fixed;right:18px;bottom:18px;z-index:9999;display:flex;flex-direction:column;gap:10px}
+  .toast-item{background:rgba(0,0,0,0.7);color:#eafff5;padding:10px 14px;border-radius:10px;box-shadow:0 8px 26px rgba(0,0,0,0.6);transform:translateY(12px);opacity:0;transition:all .28s}
+  .toast-item.show{transform:none;opacity:1}
+
+/* signup modal (dark) */
+  .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.55);display:none;align-items:center;justify-content:center;z-index:999}
+  .modal{width:420px;background:linear-gradient(180deg, rgba(4,8,14,0.92), rgba(8,12,22,0.85));padding:22px;border-radius:12px;border:1px solid rgba(95,227,191,0.08);box-shadow:0 30px 80px rgba(2,6,12,0.8)}
+  .modal h3{margin:0 0 8px 0;color:#eafff5}
+  .modal p{margin:0 0 12px 0;color:rgba(255,255,255,0.75);font-size:13px}
+  .modal input{width:100%;padding:12px;margin:8px 0;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.02);color:#fff;font-size:14px}
+  .modal input::placeholder{color:rgba(255,255,255,0.42)}
+  .modal .modal-actions{display:flex;gap:10px;justify-content:space-between;margin-top:12px;align-items:center}
+  .close-btn{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted);cursor:pointer;padding:8px 12px;border-radius:10px}
+  .submit-btn{background:linear-gradient(180deg,var(--accent2),#3bb6e8);border:0;padding:10px 14px;border-radius:10px;color:#062a28;font-weight:800;cursor:pointer;box-shadow:0 12px 36px rgba(79,195,247,0.08)}
+  .signup-note{font-size:13px;color:rgba(255,255,255,0.75);margin-top:10px}
+  .signup-error{color:#ffb3b3;margin-top:8px;font-size:13px}
+  @media (max-width:480px){ .modal{width:92%;padding:16px} }
+</style>
+</head>
+<body>
+  <div class="bg-effect" aria-hidden="true"></div>
+  <div class="bg-orbs" aria-hidden="true"></div>
+
+  <div class="stage">
+    <div class="split">
+      <!-- LEFT: form -->
+      <div class="left" role="region" aria-label="Login panel">
+        <div class="brand">
+          <div class="logo"><img src="images/logo.png" alt="logo" style="width:100%;height:100%;object-fit:cover"></div>
+          <div>
+            <h2>AR Phone Book</h2>
+            <div class="desc">Sign in to manage your contacts securely</div>
+          </div>
+        </div>
+
+        <div class="form" aria-live="polite">
+          <div class="field">
+            <div class="control">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" aria-hidden><path d="M12 12a4 4 0 100-8 4 4 0 000 8zM4 20a8 8 0 0116 0" stroke="rgba(255,255,255,0.6)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <input id="username" placeholder="Username" autocomplete="username" />
+            </div>
+          </div>
+
+          <div class="field">
+            <div class="control">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" aria-hidden><path d="M5 11v-1a7 7 0 1114 0v1" stroke="rgba(255,255,255,0.6)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><rect x="7" y="11" width="10" height="7" rx="2" stroke="rgba(255,255,255,0.6)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <input id="password" type="password" placeholder="Password" autocomplete="current-password"/>
+              <button class="eye-btn" id="pw-toggle" aria-label="Show password" title="Show password">
+                <svg id="eye-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+                  <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z" stroke="rgba(255,255,255,0.9)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <circle cx="12" cy="12" r="3" stroke="rgba(255,255,255,0.9)" stroke-width="1.2"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button class="btn" id="login"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden><path d="M5 12h14M12 5l7 7-7 7" stroke="#081018" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg> Login</button>
+
+            <!-- Create account button (opens modal) -->
+            <button class="create-account" id="open-signup">Create account</button>
+          </div>
+
+          <div class="small" style="margin-top:12px">Forgot password? <a href="reset-request.html" style="color:var(--muted);text-decoration:underline">Reset</a></div>
+        </div>
+
+        <div style="margin-top:auto;font-size:12px;color:var(--muted)">&copy; AR Phone Book</div>
+      </div>
+
+      <!-- RIGHT: decorative welcome -->
+      <div class="right" role="region" aria-label="Welcome">
+        <div class="wave" aria-hidden="true"></div>
+        <div class="blob" aria-hidden="false">
+          <div class="welcome">
+            <h1>Welcome.</h1>
+            <p>Organize your contacts — fast, secure and beautifully designed. Add, search and manage your phone book with a modern interface.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Signup modal -->
+  <div class="modal-backdrop" id="signup-modal" aria-hidden="true" role="dialog" aria-modal="true">
+    <div class="modal" role="document">
+      <h3>Create an account</h3>
+      <p class="signup-note">Create your AR Phone Book account — it's free and quick. Your password is stored securely.</p>
+      <input id="su-name" placeholder="Full name (optional)">
+      <input id="su-email" type="email" placeholder="Email">
+      <input id="su-username" placeholder="Username">
+      <input id="su-password" type="password" placeholder="Password (min 6 chars)">
+      <div class="modal-actions">
+        <button class="close-btn" id="signup-cancel">Cancel</button>
+        <button class="submit-btn" id="signup-submit">Create account</button>
+      </div>
+      <div id="signup-msg" class="signup-error" role="status" aria-live="polite"></div>
+    </div>
+  </div>
+
+  <div id="toast" aria-live="polite"></div>
+
+<script>
+/* orbs */
+(function createOrbs(){
+  const container = document.querySelector('.bg-orbs');
+  if(!container) return;
+  const orbs = 6;
+  for(let i=0;i<orbs;i++){
+    const el = document.createElement('div');
+    el.className = 'bg-orb';
+    const size = Math.floor(Math.random()*160 + 60);
+    el.style.width = size + 'px';
+    el.style.height = size + 'px';
+    el.style.left = (Math.random()*100) + '%';
+    el.style.top = (Math.random()*100) + '%';
+    el.style.animationDuration = (26 + Math.random()*18) + 's';
+    el.style.opacity = (0.02 + Math.random()*0.08).toFixed(2);
+    container.appendChild(el);
+  }
+})();
+
+/* toast */
+function toast(msg, timeout=2000){
+  const root = document.getElementById('toast');
+  const el = document.createElement('div');
+  el.className = 'toast-item';
+  el.textContent = msg;
+  root.appendChild(el);
+  requestAnimationFrame(()=> el.classList.add('show'));
+  setTimeout(()=> { el.classList.remove('show'); setTimeout(()=> el.remove(),360); }, timeout);
+}
+
+/* eye toggle */
+const pwToggle = document.getElementById('pw-toggle');
+const eyeIcon = document.getElementById('eye-icon');
+pwToggle.addEventListener('click', ()=>{
+  const pw = document.getElementById('password');
+  if(pw.type === 'password'){
+    pw.type = 'text';
+    pwToggle.title = 'Hide password';
+    eyeIcon.innerHTML = '<path d="M3 3l18 18" stroke="rgba(255,255,255,0.9)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M10.58 10.58a3 3 0 004.24 4.24" stroke="rgba(255,255,255,0.9)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 12s4-7 10-7c2.03 0 3.92.45 5.6 1.22" stroke="rgba(255,255,255,0.45)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>';
+  } else {
+    pw.type = 'password';
+    pwToggle.title = 'Show password';
+    eyeIcon.innerHTML = '<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z" stroke="rgba(255,255,255,0.9)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" stroke="rgba(255,255,255,0.9)" stroke-width="1.2"/>';
+  }
+});
+
+/* login */
+const loginBtn = document.getElementById('login');
+const validUser = 'akancharani', validPass = 'Ar123@';
+async function attemptLogin(){
+  if(loginBtn.classList.contains('loading')) return;
+  const spinner = document.createElement('span');
+  spinner.style.width='14px'; spinner.style.height='14px'; spinner.style.border='2px solid rgba(255,255,255,0.35)';
+  spinner.style.borderTopColor='#081018'; spinner.style.borderRadius='50%'; spinner.style.marginRight='8px';
+  spinner.style.display='inline-block'; spinner.style.animation='spin .9s linear infinite';
+  loginBtn.prepend(spinner);
+  loginBtn.classList.add('loading');
+
+  await new Promise(r=>setTimeout(r,700));
+
+  const u = document.getElementById('username').value.trim();
+  const p = document.getElementById('password').value;
+  if(u === validUser && p === validPass){
+    toast('Signed in — welcome!');
+    sessionStorage.setItem('ar_logged_in','1'); sessionStorage.setItem('ar_user', u);
+    setTimeout(()=> location.href = 'app.html', 700);
+  } else {
+    toast('Login failed — check credentials');
+    loginBtn.classList.remove('loading');
+    spinner.remove();
+  }
+}
+loginBtn.addEventListener('click', attemptLogin);
+document.getElementById('password').addEventListener('keypress', e => { if(e.key === 'Enter') attemptLogin(); });
+
+/* spinner keyframes */
+const s = document.createElement('style');
+s.textContent = `@keyframes spin{ to{ transform: rotate(360deg); } }`;
+document.head.appendChild(s);
+
+/* signup modal wiring */
+const openSignupBtn = document.getElementById('open-signup');
+const signupModal = document.getElementById('signup-modal');
+const signupCancel = document.getElementById('signup-cancel');
+const signupSubmit = document.getElementById('signup-submit');
+const signupMsg = document.getElementById('signup-msg');
+
+openSignupBtn.addEventListener('click', ()=> {
+  signupModal.style.display = 'flex';
+  signupModal.setAttribute('aria-hidden','false');
+  document.getElementById('su-name').value = '';
+  document.getElementById('su-email').value = '';
+  document.getElementById('su-username').value = '';
+  document.getElementById('su-password').value = '';
+  signupMsg.textContent = '';
+});
+
+signupCancel.addEventListener('click', ()=> {
+  signupModal.style.display = 'none';
+  signupModal.setAttribute('aria-hidden','true');
+  signupMsg.textContent = '';
+});
+
+signupSubmit.addEventListener('click', async () => {
+  signupMsg.style.color = '#ffb3b3';
+  signupMsg.textContent = '';
+  const payload = {
+    name: document.getElementById('su-name').value.trim(),
+    email: document.getElementById('su-email').value.trim(),
+    username: document.getElementById('su-username').value.trim(),
+    password: document.getElementById('su-password').value
+  };
+  if(!payload.email || !payload.username || !payload.password){
+    signupMsg.textContent = 'Please fill required fields (email, username, password).';
+    return;
+  }
+  if(payload.password.length < 6){
+    signupMsg.textContent = 'Password must be at least 6 characters.';
+    return;
+  }
+
+  // demo behaviour (replace with real /api/signup when backend ready)
+  toast('Account created (demo). Please sign in.');
+  signupModal.style.display = 'none';
+});
+
+/* close modal on backdrop click */
+signupModal.addEventListener('click', (evt) => {
+  if(evt.target === signupModal){
+    signupModal.style.display = 'none';
+    signupModal.setAttribute('aria-hidden','true');
+  }
+});
+</script>
+</body>
+</html>

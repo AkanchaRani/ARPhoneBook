@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>AR Phone Book — Edit Contact</title>
+<style>
+  :root{ --bg1:#071226; --card:#071a2a; --accent:#e76f8a; --accent2:#6dd3b2; --muted:#9fb0c6; --radius:12px;}
+  *{box-sizing:border-box} body{margin:0;font-family:Segoe UI,Roboto,Arial;background:linear-gradient(180deg,#061226,#041026);color:#eaf6f4;padding:28px}
+  .wrap{max-width:780px;margin:0 auto}
+  .header{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+  .logo{width:60px;height:60px;border-radius:10px;overflow:hidden}
+  .logo img{width:100%;height:100%;object-fit:cover}
+  .title h1{margin:0;font-size:20px} .title p{margin:4px 0 0;color:var(--muted);font-size:13px}
+  .card{background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);padding:20px;border-radius:12px;box-shadow:0 12px 30px rgba(2,6,23,0.5)}
+  form{display:grid;gap:12px}
+  input,textarea{background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.03);padding:10px;border-radius:10px;color:inherit}
+  .row{display:flex;gap:10px}
+  .row input{flex:1}
+  .actions{display:flex;gap:10px;justify-content:flex-end;margin-top:6px}
+  .btn{background:linear-gradient(90deg,var(--accent),var(--accent2));color:#061217;padding:10px 14px;border-radius:10px;border:0;font-weight:700;cursor:pointer}
+  .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted)}
+  @media (max-width:600px){ .row{flex-direction:column} .actions{flex-direction:column-reverse} }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <div class="logo"><img src="images/logo.png" alt="logo"></div>
+      <div class="title"><h1>Edit Contact</h1><p class="small">Update contact details</p></div>
+    </div>
+
+    <div class="card">
+      <form id="form">
+        <input name="FullName" placeholder="Full name" required>
+        <div class="row">
+          <input name="Email" type="email" placeholder="Email (optional)">
+          <input name="Phone" placeholder="Phone (optional)">
+        </div>
+        <input name="Address" placeholder="Address (optional)">
+        <textarea name="Notes" placeholder="Notes (optional)"></textarea>
+
+        <div class="actions">
+          <button type="button" class="btn ghost" onclick="location.href='app.html'">Cancel</button>
+          <button type="submit" class="btn">Update Contact</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+<script>
+const id = new URLSearchParams(location.search).get('id');
+if(!id){ location.href = 'app.html'; }
+
+async function load(){
+  try{
+    const res = await fetch('/api/contacts/' + id);
+    if(!res.ok){ throw new Error('Not found'); }
+    const data = await res.json();
+    const f = document.getElementById('form');
+    f.FullName.value = data.FullName || '';
+    f.Email.value = data.Email || '';
+    f.Phone.value = data.Phone || '';
+    f.Address.value = data.Address || '';
+    f.Notes.value = data.Notes || '';
+  }catch(err){
+    alert('Cannot load contact: ' + err.message);
+    location.href = 'app.html';
+  }
+}
+
+document.getElementById('form').onsubmit = async (e) => {
+  e.preventDefault();
+  const f = e.target;
+  const payload = {
+    FullName: f.FullName.value.trim(),
+    Email: f.Email.value.trim(),
+    Phone: f.Phone.value.trim(),
+    Address: f.Address.value.trim(),
+    Notes: f.Notes.value.trim()
+  };
+  try{
+    const res = await fetch('/api/contacts/' + id, {
+      method:'PUT',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+    if(!res.ok){ const err = await res.json(); throw new Error(err.error || res.statusText); }
+    alert('Updated');
+    location.href = 'app.html';
+  }catch(err){
+    alert('Update failed: ' + err.message);
+  }
+};
+
+load();
+</script>
+</body>
+</html>

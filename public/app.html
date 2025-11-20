@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>AR Phone Book — App</title>
+
+<!-- Inter font for nicer UI -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg:#041227;
+    --panel:#071826;
+    --muted:#9fb0c6;
+    --accent:#6dd3b2;
+    --accent2:#4fc3f7;
+    --glass: rgba(255,255,255,0.03);
+    --card-radius:14px;
+  }
+
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial;background:
+    radial-gradient(1200px 600px at 10% 10%, rgba(79,195,247,0.03), transparent 6%),
+    radial-gradient(900px 500px at 90% 90%, rgba(95,227,191,0.03), transparent 6%),
+    linear-gradient(180deg,var(--bg),#031025);color:#eaf6f4}
+  body{padding:28px}
+
+/* container */
+  .container{max-width:1180px;margin:0 auto}
+
+/* header top */
+  header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:22px}
+  .brand{display:flex;gap:16px;align-items:center}
+  .brand img{width:72px;height:72px;border-radius:14px;object-fit:cover;border:1px solid var(--glass);background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent)}
+  .brand .title{line-height:1}
+  .brand h1{margin:0;font-size:20px}
+  .brand .sub{color:var(--muted);font-size:13px;margin-top:2px}
+
+/* top controls (search + buttons) */
+  .top-controls{display:flex;align-items:center;gap:12px}
+  .search{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.02);padding:10px 14px;border-radius:14px;border:1px solid rgba(255,255,255,0.02);min-width:420px}
+  .search svg{opacity:0.7}
+  .search input{background:transparent;border:0;color:inherit;outline:0;font-size:15px;width:320px}
+  .btn{display:inline-flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;border:0;font-weight:700;cursor:pointer;background:linear-gradient(90deg,var(--accent),var(--accent2));color:#022026;box-shadow:0 14px 40px rgba(79,195,247,0.06)}
+  .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted);font-weight:700;padding:10px 12px}
+  .btn.round{width:56px;height:56px;border-radius:12px;padding:0;display:inline-grid;place-items:center}
+
+/* main layout */
+  .grid{display:grid;grid-template-columns:1fr 360px;gap:20px}
+  @media (max-width:980px){ .grid{grid-template-columns:1fr} .search input{width:160px} }
+
+/* main card */
+  .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:22px;border-radius:var(--card-radius);border:1px solid var(--glass);box-shadow:0 30px 80px rgba(3,10,20,0.6)}
+  .card h2{margin:0 0 12px 0;font-size:22px}
+
+/* contacts area */
+  .info{color:var(--muted);padding:12px 0}
+  table{width:100%;border-collapse:collapse}
+  th{color:var(--muted);font-size:13px;text-align:left;padding:10px 8px 8px 8px}
+  td{padding:12px 8px;border-top:1px solid rgba(255,255,255,0.02);vertical-align:middle}
+  .name{font-weight:700}
+  .submuted{color:var(--muted);font-size:13px}
+  .actions button{margin-right:8px;padding:6px 8px;border-radius:8px;border:0;background:transparent;color:var(--accent2);cursor:pointer}
+  .actions button.del{color:#ff8b8b}
+
+/* quick actions panel */
+  aside.card{position:relative}
+  .panel-title{font-size:18px;margin:0 0 8px 0}
+  .muted{color:var(--muted)}
+  .side-btns{display:flex;flex-direction:column;gap:12px;margin-top:12px}
+
+/* small responsive tweaks */
+  @media (max-width:640px){
+    .search{min-width:160px}
+    .brand img{width:56px;height:56px}
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="brand">
+        <img src="images/logo.png" alt="logo">
+        <div class="title">
+          <h1>AR Phone Book</h1>
+          <div id="top-user" class="sub">Signed in</div>
+        </div>
+      </div>
+
+      <div class="top-controls">
+        <div class="search" title="Search">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style="opacity:.9"><path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path><circle cx="11" cy="11" r="6" stroke="currentColor" stroke-width="1.6"></circle></svg>
+          <input id="q" placeholder="Search name, email or phone" onkeyup="onSearchKey(event)" />
+        </div>
+
+        <!-- Toggle button will change text between Show All / Hide All -->
+        <button class="btn ghost" id="showAllBtn" onclick="toggleShowAll()">Show All</button>
+
+        <!-- Add button keeps same path to add.html -->
+        <button class="btn round" id="addBtn" title="Add" onclick="location.href='add.html'">+</button>
+      </div>
+    </header>
+
+    <div class="grid">
+      <main class="card">
+        <h2>Contacts <span id="count" class="submuted" style="margin-left:10px"></span></h2>
+
+        <!-- list area -->
+        <div id="listArea" class="info">No contacts displayed. Click "Show All" to load everything, or enter a search and press Enter.</div>
+      </main>
+
+      <aside class="card">
+        <h3 class="panel-title">Quick Actions</h3>
+        <p class="muted">Refresh, export, or add a contact.</p>
+
+        <div class="side-btns">
+          <button class="btn ghost" onclick="refreshIfShown()">Refresh</button>
+          <button class="btn ghost" onclick="exportCSV()">Export CSV</button>
+          <button class="btn ghost" onclick="location.href='add.html'">Add contact</button>
+        </div>
+
+        <div style="margin-top:22px">
+          <h4 style="margin:0 0 8px 0">Search Result</h4>
+          <div id="search-result" class="muted">No matches</div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+<script>
+  // keep the same session storage logic you used earlier
+  const logged = sessionStorage.getItem('ar_logged_in');
+  const user = sessionStorage.getItem('ar_user') || 'User';
+  document.getElementById('top-user').textContent = logged ? ('Signed in as ' + user) : 'Not signed in';
+
+  // internal state
+  let listVisible = false;
+  let lastAction = null; // {type:'all'} or {type:'search', q: '...'}
+  let contactsCache = null;
+
+  // safe parse helper (avoids Unexpected end of JSON input)
+  async function safeJson(res){
+    const text = await res.text();
+    if(!text) return null;
+    try { return JSON.parse(text); } catch(e){ console.warn('safeJson parse failed', text); return null; }
+  }
+
+  function escapeHTML(s){ return String(s||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+  // render table
+  function renderList(data){
+    document.getElementById('count').textContent = `${data.length} contacts`;
+    if(!data || data.length === 0){
+      document.getElementById('listArea').innerHTML = '<div class="info">No contacts found.</div>';
+      return;
+    }
+    let html = '<table><thead><tr><th>Name</th><th>Email</th><th>Phone</th><th style="width:120px">Actions</th></tr></thead><tbody>';
+    data.forEach(c=>{
+      // use your exact field names — convert if backend uses different keys
+      // fallback to multiple possible keys to be safe
+      const id = c.ContactId || c.id || c.ID || '';
+      const name = escapeHTML(c.FullName || c.name || c.fullName || '');
+      const email = escapeHTML(c.Email || c.email || '');
+      const phone = escapeHTML(c.Phone || c.phone || '');
+      const address = escapeHTML(c.Address || c.address || '');
+      html += `<tr>
+        <td><strong>${name || '—'}</strong><div style="color:var(--muted);font-size:13px">${address || ''}</div></td>
+        <td>${email}</td>
+        <td>${phone}</td>
+        <td class="actions"><button onclick="goEdit('${id}')">Edit</button><button class="del" onclick="del('${id}')">Delete</button></td>
+      </tr>`;
+    });
+    html += '</tbody></table>';
+    document.getElementById('listArea').innerHTML = html;
+  }
+
+  // Edit navigates to edit.html with same path
+  function goEdit(id){
+    if(!id){ alert('Missing id'); return; }
+    window.location.href = 'edit.html?id=' + encodeURIComponent(id);
+  }
+
+  // Delete uses same URL pattern: DELETE /api/contacts/:id
+  async function del(id){
+    if(!id){ alert('Missing id'); return; }
+    if(!confirm('Delete this contact?')) return;
+    try {
+      const res = await fetch('/api/contacts/' + encodeURIComponent(id), { method: 'DELETE' });
+      if(!res.ok){
+        const pj = await safeJson(res);
+        throw new Error((pj && pj.error) ? pj.error : res.statusText || 'Delete failed');
+      }
+      // success
+      alert('Deleted');
+      // clear cache and refresh current view if shown
+      contactsCache = null;
+      if(listVisible) {
+        await reloadCurrent();
+      }
+    } catch(err){
+      console.error('delete error', err);
+      alert('Delete failed: ' + err.message);
+    }
+  }
+
+  /* ---------- Show All / Hide All toggle ----------
+     - keeps same endpoint: GET /api/contacts
+     - caches results so repeated Show doesn't refetch unless cache cleared
+  */
+  const showAllBtn = document.getElementById('showAllBtn');
+
+  function setShowAllState(visible){
+    listVisible = visible;
+    showAllBtn.textContent = visible ? 'Hide All' : 'Show All';
+  }
+
+  async function fetchAllContacts(){
+    const res = await fetch('/api/contacts');
+    if(!res.ok){
+      const pj = await safeJson(res);
+      throw new Error((pj && pj.error) ? pj.error : res.statusText || 'Failed to fetch');
+    }
+    const parsed = await safeJson(res);
+    // Accept array or object with { data: [...] }
+    if(Array.isArray(parsed)) return parsed;
+    if(parsed && Array.isArray(parsed.data)) return parsed.data;
+    // If server returned null/empty, return [] (avoids JSON parse crash)
+    return [];
+  }
+
+  async function showAll(){
+    showAllBtn.disabled = true;
+    showAllBtn.textContent = 'Loading...';
+    try {
+      if(!contactsCache) contactsCache = await fetchAllContacts();
+      renderList(contactsCache);
+      setShowAllState(true);
+      lastAction = { type: 'all' };
+    } catch(err){
+      console.error('showAll error', err);
+      document.getElementById('listArea').innerHTML = '<div class="info">Cannot load contacts: ' + err.message + '</div>';
+      setShowAllState(false);
+    } finally {
+      showAllBtn.disabled = false;
+    }
+  }
+
+  function hideAll(){
+    document.getElementById('listArea').innerHTML = '<div class="info">No contacts displayed. Click "Show All" to load everything, or enter a search and press Enter.</div>';
+    setShowAllState(false);
+  }
+
+  function toggleShowAll(){
+    if(listVisible) hideAll();
+    else showAll();
+  }
+
+  // wire toggle to button (for external calls)
+  window.toggleShowAll = toggleShowAll;
+
+  /* ---------- Search (on Enter) ----------
+     - uses same server path: GET /api/contacts?q=searchTerm
+     - if your server doesn't implement that query string, fallback to client-side filter
+  */
+  async function onSearchKey(e){
+    if(e.key !== 'Enter') return;
+    const q = document.getElementById('q').value.trim();
+    if(!q){ alert('Please enter search text'); return; }
+
+    // try server-side search first (same path)
+    try {
+      const res = await fetch('/api/contacts?q=' + encodeURIComponent(q));
+      if(res.ok){
+        const parsed = await safeJson(res);
+        const list = Array.isArray(parsed) ? parsed : (parsed && Array.isArray(parsed.data) ? parsed.data : []);
+        renderList(list);
+        setShowAllState(true);
+        lastAction = { type:'search', q };
+        // update search result side panel
+        const sr = document.getElementById('search-result');
+        sr.textContent = list.length ? `${list.length} match(es)` : 'No matches';
+        return;
+      }
+    } catch(err){
+      console.warn('server search failed, falling back to client filter', err);
+    }
+
+    // fallback: fetch all (or from cache) and filter client-side
+    try {
+      if(!contactsCache) contactsCache = await fetchAllContacts();
+      const filtered = contactsCache.filter(c => {
+        const s = ( (c.FullName||c.name||'') + ' ' + (c.Email||c.email||'') + ' ' + (c.Phone||c.phone||'') ).toLowerCase();
+        return s.includes(q.toLowerCase());
+      });
+      renderList(filtered);
+      setShowAllState(true);
+      lastAction = { type:'search', q };
+      document.getElementById('search-result').textContent = filtered.length ? `${filtered.length} match(es)` : 'No matches';
+    } catch(err){
+      console.error('search fallback error', err);
+      document.getElementById('listArea').innerHTML = '<div class="info">Search failed — ' + err.message + '</div>';
+    }
+  }
+
+  /* ---------- Export CSV (exports all contacts) ----------
+     - same GET /api/contacts endpoint (kept unchanged)
+  */
+  async function exportCSV(){
+    try {
+      const res = await fetch('/api/contacts');
+      const parsed = await safeJson(res) || [];
+      const rows = Array.isArray(parsed) ? parsed : (parsed.data || []);
+      if(!rows.length){ alert('No contacts to export'); return; }
+      // build CSV header from known fields
+      const header = ['ContactId','FullName','Email','Phone','Address'];
+      const csv = [header.join(',')].concat(rows.map(r => header.map(h => `"${String(r[h]||'').replace(/"/g,'""')}"`).join(','))).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = 'contacts.csv'; a.click();
+      URL.revokeObjectURL(url);
+    } catch(err){
+      console.error('export error', err);
+      alert('Export failed: ' + err.message);
+    }
+  }
+
+  /* ---------- Refresh / reload current view ----------
+     - lastAction remembers whether user last requested "all" or a search
+  */
+  async function reloadCurrent(){
+    if(!lastAction) return;
+    if(lastAction.type === 'all') {
+      // clear cache and show again
+      contactsCache = null;
+      await showAll();
+    } else if(lastAction.type === 'search'){
+      // repeat search
+      const q = lastAction.q;
+      document.getElementById('q').value = q;
+      await onSearchKey({ key: 'Enter' });
+    }
+  }
+
+  function refreshIfShown(){ if(listVisible) reloadCurrent(); else alert('No list shown. Click "Show All" or search first.'); }
+
+  /* ---------- Sign-out button (keeps behaviour) ---------- */
+  // keep same sign-out approach if present elsewhere: (not changing path)
+  // you can add signout button and logic if required
+
+  /* ---------- Prevent auto-load: list hidden until user clicks ----------
+     Initialize UI state
+  */
+  setShowAllState(false);
+
+  // expose a couple helpers for console testing
+  window.reloadCurrent = reloadCurrent;
+  window.clearContactsCache = () => { contactsCache = null; alert('Cache cleared'); };
+</script>
+</body>
+</html>
