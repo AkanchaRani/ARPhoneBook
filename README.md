@@ -32,6 +32,7 @@ This project allows users to manage contacts efficiently with a clean and simple
 
 ## 📂 Project Structure
 
+```text
 ARPhoneBook/
 │
 ├── public/             # Frontend HTML files
@@ -48,5 +49,4 @@ ARPhoneBook/
 ├── .gitignore
 ├── README.md
 └── project_database.sql
-
 
