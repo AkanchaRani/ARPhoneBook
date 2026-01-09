@@ -32,4 +32,21 @@ This project allows users to manage contacts efficiently with a clean and simple
 
 ## 📂 Project Structure
 
+ARPhoneBook/
+│
+├── public/             # Frontend HTML files
+│   ├── index.html
+│   ├── signup.html
+│   └── images/
+│
+├── Server/             # Backend (Node.js)
+│   ├── index.js
+│   ├── db.js
+│   ├── routes/
+│   └── package.json
+│
+├── .gitignore
+├── README.md
+└── project_database.sql
+
 
